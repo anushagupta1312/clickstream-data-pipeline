@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Sat Jul 23 19:36:21 IST 2022:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.12.1.1 - (1704137): instance a816c00e-0182-2b61-6acf-00001bf6fb10 
+on database directory /Users/Z00B3CZ/Desktop/clickstream-data-pipeline/metastore_db with class loader org.apache.spark.sql.hive.client.IsolatedClientLoader$$anon$1@5bc28f40 
+Loaded from file:/Users/Z00B3CZ/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/derby/derby/10.12.1.1/derby-10.12.1.1.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.8.0_331-b09
+user.dir=/Users/Z00B3CZ/Desktop/clickstream-data-pipeline
+os.name=Mac OS X
+os.arch=x86_64
+os.version=12.5
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''
