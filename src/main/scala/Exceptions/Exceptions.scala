@@ -1,0 +1,5 @@
+package Exceptions
+
+object Exceptions {
+
+}

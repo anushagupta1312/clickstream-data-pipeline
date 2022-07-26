@@ -1,11 +1,16 @@
 package file_cleanser
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{col, to_timestamp}
+import org.apache.spark.sql.functions.{col, lower, to_timestamp}
 
 object modifying_datatypes {
   def convertStoT(df : DataFrame, col_name: String, format : String) : DataFrame = {
     val new_df = df.withColumn(col_name, to_timestamp(col(col_name),format))
+    new_df
+  }
+
+  def toLowercase(df : DataFrame, col_name: String) : DataFrame = {
+    val new_df = df.withColumn(col_name, lower(col(col_name)))
     new_df
   }
 
