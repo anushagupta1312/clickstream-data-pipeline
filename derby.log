@@ -1,6 +1,6 @@
 ----------------------------------------------------------------
-Tue Jul 26 16:40:24 IST 2022:
-Booting Derby version The Apache Software Foundation - Apache Derby - 10.12.1.1 - (1704137): instance a816c00e-0182-3a33-6a46-000011996a28 
+Wed Jul 27 00:28:13 IST 2022:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.12.1.1 - (1704137): instance a816c00e-0182-3bdf-b60e-000011b32b50 
 on database directory /Users/Z00B3CZ/Desktop/clickstream-data-pipeline/metastore_db with class loader org.apache.spark.sql.hive.client.IsolatedClientLoader$$anon$1@6dd1c3ed 
 Loaded from file:/Users/Z00B3CZ/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/derby/derby/10.12.1.1/derby-10.12.1.1.jar
 java.vendor=Oracle Corporation

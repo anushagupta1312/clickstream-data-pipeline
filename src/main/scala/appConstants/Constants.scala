@@ -1,10 +1,11 @@
-package constants
+package appConstants
 
-object constants {
-  val path_clickstream = "data/clickstream_log.csv"
-  val path_item = "data/item_data.csv"
+object Constants {
+  val CLICKSTREAM_PATH = "data/clickstream_log.csv"
+  val ITEM_DATA_PATH = "data/item_data.csv"
 
-  val datatype_clickstream = Seq(("id", "long"),
+  val CLICKSTREAM_DATATYPE = Seq(
+    ("id", "int"),
     ("event_timestamp", "timestamp"),
     ("device_type", "string"),
     ("session_id", "string"),
@@ -14,8 +15,9 @@ object constants {
     ("is_add_to_cart", "boolean"),
     ("is_order_placed", "boolean"))
 
-  val datatype_item = Seq(("item_id", "string"),
-    ("item_price", "float"),
+  val ITEM_DATAYPE = Seq(
+    ("item_id", "string"),
+    ("item_price", "double"),
     ("product_type", "string"),
     ("department_name", "string"),
     ("vendor_id", "int"),
