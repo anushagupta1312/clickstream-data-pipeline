@@ -3,6 +3,7 @@ import reader.FileReader.file_Reader
 import org.apache.spark.sql.SparkSession
 import cleanser.FileCleanser.{colDatatypeModifier, stringToTimestamp, toLowercase}
 import org.apache.log4j.Logger
+import writer.FileWriter.fileWriter
 
 object DataPipeline {
   val log = Logger.getLogger(getClass)
@@ -32,6 +33,9 @@ object DataPipeline {
     //modifying the datatypes of the columns of the clickstream dataset
     val modifiedClickstreamDF = colDatatypeModifier(modifiedDF, Constants.CLICKSTREAM_DATATYPE)
 
+    //writing the resultant data to a file
+    fileWriter(modifiedClickstreamDF, "output_data/clickstream_data.csv", "csv")
+
     /****************ITEM DATASET****************/
 
     //reading item dataset
@@ -39,6 +43,9 @@ object DataPipeline {
 
     //modifying the datatypes of the columns of the item dataset
     val modifiedItemDF = colDatatypeModifier(itemDF, Constants.ITEM_DATAYPE)
+
+    //writing the resultant data of item dataset to a file
+    fileWriter(modifiedItemDF, "output_data/item_data.csv", "csv")
 
     //logging information about clickstream dataset
     log.info("Total items in the clickstream dataset " + modifiedClickstreamDF.count())

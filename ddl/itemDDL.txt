@@ -6,3 +6,11 @@ val itemSchema = StructType(Array(
     StructField("vendor_id", IntegerType, true),
     StructField("vendor_name", StringType, true),
   ))
+
+val itemSchema =  "`item_id` STRING,
+                 `item_price` DOUBLE,
+                 `product_type` STRING,
+                 `department_name` STRING,
+                 `vendor_id` INTEGER,
+                 `vendor_name` STRING,"
+

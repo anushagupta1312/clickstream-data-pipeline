@@ -4,7 +4,7 @@ object Constants {
   val CLICKSTREAM_PATH = "data/clickstream_log.csv"
   val ITEM_DATA_PATH = "data/item_data.csv"
 
-  val CLICKSTREAM_DATATYPE = Seq(
+  val CLICKSTREAM_DATATYPE = List(
     ("id", "int"),
     ("event_timestamp", "timestamp"),
     ("device_type", "string"),
@@ -15,7 +15,7 @@ object Constants {
     ("is_add_to_cart", "boolean"),
     ("is_order_placed", "boolean"))
 
-  val ITEM_DATAYPE = Seq(
+  val ITEM_DATAYPE = List(
     ("item_id", "string"),
     ("item_price", "double"),
     ("product_type", "string"),

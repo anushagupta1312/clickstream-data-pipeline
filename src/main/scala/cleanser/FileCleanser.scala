@@ -17,7 +17,7 @@ object FileCleanser {
   }
 
   //modifies the datatype of the columns in a dataframe
-  def colDatatypeModifier(inputDF : DataFrame, colDatatype : Seq[(String,String)]) : DataFrame = {
+  def colDatatypeModifier(inputDF : DataFrame, colDatatype : List[(String, String)]) : DataFrame = {
     val outputDF = inputDF.select(colDatatype.map{case(c,t) => inputDF.col(c).cast(t)}:_*)
     outputDF
   }
