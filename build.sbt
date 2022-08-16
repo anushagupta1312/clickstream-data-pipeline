@@ -7,6 +7,9 @@ val jacksonCore = "2.6.7"
 val scope = "compile"
 
 libraryDependencies ++= Seq(
+//  //dependency for unit testing
+//  "org.scalatest" %% "scalatest" % "3.2.13" % "test",
+//
   "org.scalamock" %% "scalamock" % "4.4.0" % Test,
   //dependency of reading configuration
   "com.typesafe" % "config" % "1.3.3",

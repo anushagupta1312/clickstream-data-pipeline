@@ -20,4 +20,13 @@
 
 /src/main/scala/com/igniteplus/.DS_Store
 
-/output_data/
+/data/output_data/
+
+/.bsp
+
+/metastore_db
+
+/derby.log
+
+
+/null
