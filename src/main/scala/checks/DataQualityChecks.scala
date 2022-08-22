@@ -5,7 +5,10 @@ import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{col, desc, row_number}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import service.FileWriter
+import service.FileWriter.fileWriter
 import utils.ApplicationUtils.createSparkSession
+
 import scala.collection.JavaConversions._
 
 object DataQualityChecks {
@@ -32,8 +35,9 @@ object DataQualityChecks {
     StructField("event_d",DateType,nullable = true),
     StructField("record_load_ts",TimestampType,nullable = true)))
 
+  var errorDF = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], errorSchema)
   //nulls
-  def nullCheck(inputDF: DataFrame, columns: List[String]): Unit = {
+  def nullCheck(inputDF: DataFrame, columns: List[String]): DataFrame = {
 //    columns.foreach(c => {
 //      if(inputDF.filter(inputDF(c).isNull
 //        || inputDF(c) === ""
@@ -42,38 +46,31 @@ object DataQualityChecks {
 //        throw NullValuesExistException("Null values are present in the dataset")
 //      }
 //    })
-    var count = 0
-    var errorList = List[Row]()
     inputDF.collect().foreach(row => {
       row.toSeq.foreach(c => {
-        if (c == "UNKNOWN" || c == -1 || c == false) {
+        if (c == "UNKNOWN" || c == -1 || c == false || c == "null" || c == "NULL" || c == "") {
           count = count + 1
         }
       })
-      if (count > 8) {
+      if (count > 9) {
         errorList = errorList :+ row
       }
       count = 0
     })
-
-    val errorDF = spark.createDataFrame(errorList, errorSchema)
-    errorDF.show()
+    errorDF = errorDF.union(spark.createDataFrame(errorList, errorSchema))
+    val nullCheckFinalDF = inputDF.except(errorDF)
+    nullCheckFinalDF
   }
 
   //duplicates check
-  def duplicatesCheck(inputDF: DataFrame, primaryKeyCols : Seq[String], orderByCol: Option[String]) : Unit = {
-    orderByCol match {
-      case Some(column) =>
-        val exceptionsDF = inputDF.withColumn("rn", row_number().over(Window.partitionBy(primaryKeyCols.map(col): _*).orderBy(desc(column))))
-          .filter(col("rn") >1).drop("rn")
-        if(exceptionsDF.count() != 0){
-          throw DuplicateValuesExistException("Duplicates found in click stream dataset")
-        }
-      case None =>
-        if(inputDF.except(inputDF.dropDuplicates(primaryKeyCols)).count() != 0){
-          throw DuplicateValuesExistException("Duplicates found in item dataset")
-        }
-    }
+  def duplicatesCheck(inputDF: DataFrame, primaryKeyCols : Seq[String], orderByCol:String) : DataFrame = {
+    val exceptionsDF = inputDF.withColumn("rn", row_number().over(Window.partitionBy(primaryKeyCols.map(col): _*).orderBy(desc(orderByCol))))
+      .filter(col("rn") >1).drop("rn")
+
+    errorDF = errorDF.union(exceptionsDF)
+    val duplicateCheckFinalDF = inputDF.except(errorDF)
+    FileWriter.fileWriter("error_table", errorDF)
+    duplicateCheckFinalDF
   }
 
   //schema validation
