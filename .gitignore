@@ -22,11 +22,14 @@
 
 /data/output_data/
 
+/data/encrypted_password.txt
+
+/data/actual_password.txt
+
 /.bsp
 
 /metastore_db
 
 /derby.log
-
 
 /null

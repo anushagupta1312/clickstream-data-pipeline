@@ -10,4 +10,6 @@ object Exceptions{
   case class InvalidInputFormatException(message:String) extends Exception(message)
   case class SchemaValidationFailedException(message : String) extends Exception(message)
   case class NullValuesExistException(message : String) extends Exception(message)
+  case class DuplicateValuesExistException(message:String) extends Exception(message)
 }
+
