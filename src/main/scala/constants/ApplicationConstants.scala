@@ -5,21 +5,15 @@ object ApplicationConstants {
   val CLICK_STREAM_INPUT_PATH: String = "spark.app.clickStreamInputPath"
   val ITEM_DATA_INPUT_PATH: String = "spark.app.itemDataInputPath"
 
-  val CLICK_STREAM_PRIMARY_KEYS: Seq[String] = Seq("visitor_id", "item_id")
+  val CLICK_STREAM_PRIMARY_KEYS: Seq[String] = Seq("session_id", "visitor_id", "item_id")
   val ITEM_PRIMARY_KEYS: Seq[String] = Seq("item_id")
 
   //constants for null values handling
-  val CLICK_STREAM_NOT_NULL_KEYS = Seq("id", "session_id", "item_id")
-  val CLICK_STREAM_BOOLEAN = Seq("is_add_to_cart", "is_order_placed")
-
-  val CLICK_STREAM_TIMESTAMP = Seq("event_timestamp")
-  val CLICK_STREAM_NUMERIC = Seq("id", "session_id")
-  val CLICK_STREAM_STRING = Seq("device_type", "redirection_source")
+  val CLICK_STREAM_NOT_NULL_KEYS = Seq("visitor_id","item_id")
+  val COLUMN_NAME_DEFAULT_VALUE_CLICK_STREAM_MAP=Map("id"->(-1),"device_type"->"UNKNOWN","session_id"->"UNKNOWN","redirection_source"->"UNKNOWN","is_add_to_cart"->false,"is_order_placed"->false)
 
   val ITEM_NOT_NULL_KEYS = Seq("item_id", "vendor_id")
-  val ITEM_DATA_INT = Seq("vendor_id")
-  val ITEM_DATA_FLOAT = Seq("item_price")
-  val ITEM_DATA_STRING = Seq("product_type", "department_name", "vendor_name", "item_price")
+  val COLUMN_NAME_DEFAULT_VALUE_ITEM_DATA_MAP=Map("item_price"->(-1),"product_type"->"UNKNOWN","department_name"->"UNKNOWN","vendor_id"->(-1),"vendor_name"->"UNKNOWN")
 
   //output path
   val CLICK_STREAM_OUTPUT_PATH: String = "spark.app.clickStreamOutputPath"
@@ -53,25 +47,28 @@ object ApplicationConstants {
     ("vendor_id", "int"),
     ("vendor_name", "string"))
 
-  //  map for null replace
-  val clickStreamNullFillValues = Map(
-    "is_add_to_cart" -> false,
-    "is_order_placed" -> false,
-    "device_type" -> "unknown",
-    "visitor_id" -> "unknown",
-    "redirection_source" -> "unknown")
+  val FINAL_TABLE_COL = List("item_id",
+                              "id",
+                              "event_timestamp",
+                              "device_type",
+                              "session_id",
+                              "visitor_id",
+                              "redirection_source",
+                              "is_add_to_cart",
+                              "is_order_placed",
+                              "item_price",
+                              "product_type",
+                              "department_name",
+                              "vendor_id",
+                              "vendor_name",
+                              "event_d",
+                              "record_load_ts")
 
-  val itemDataNullFillValues = Map("item_price" -> (-1),
-    "vendor_id" -> (-1),
-    "department_name" -> "unknown",
-    "product_type" -> "unknown",
-    "vendor_name" -> "unknown"
-  )
   //  Join
   val join_key: Seq[String] = Seq("item_id")
   val join_type: String = "left"
 
-  val DEFAULT_STRING_NULL = "unknown"
-  val DEFAULT_NUMERIC_NULL = (-1)
+  val DATABASE_PASSWORD: String = "data/actual_password.txt"
+  val ENCRYPTED_DATABASE_PASSWORD: String = "data/encrypted_password.txt"
 
 }

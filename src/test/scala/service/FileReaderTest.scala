@@ -1,8 +1,9 @@
+package service
+
 import org.scalatest.flatspec.AnyFlatSpec
 
 class FileReaderTest extends AnyFlatSpec{
   implicit val spark = utils.ApplicationUtils.createSparkSession();
-  import spark.implicits._
 
   "file reader " should "return a return a dataframe with records " in {
     val inputPath = "data/clickstream_log.csv"
@@ -12,5 +13,5 @@ class FileReaderTest extends AnyFlatSpec{
 
   }
 
-
 }
+
