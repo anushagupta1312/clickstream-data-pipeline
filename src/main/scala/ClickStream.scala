@@ -1,5 +1,5 @@
 
-import exceptions.Exceptions.{ColumnNotFoundException, DataframeIsEmptyException, DuplicateValuesExistException, EmptyFilePathException, FilePathNotFoundException, FileReaderException, FileWriterException, InvalidInputFormatException, NullValuesExistException, SchemaValidationFailedException}
+import exceptions.Exceptions.{ColumnNotFoundException, DatabaseException, DataframeIsEmptyException, DuplicateValuesExistException, EmptyFilePathException, FilePathNotFoundException, FileReaderException, FileWriterException, InvalidInputFormatException, NullValuesExistException, SchemaValidationFailedException}
 import service.DataPipeline.{execute, log}
 
 import scala.sys.exit
@@ -32,6 +32,8 @@ object ClickStream {
       case ex : DuplicateValuesExistException => log.error("DuplicateValuesExistException: " + ex.message)
         exit(1)
       case ex: FileWriterException => log.error("FileWriterException:" + ex.message)
+        exit(1)
+      case ex: DatabaseException => log.error("DatabaseException:" + ex.message)
         exit(1)
     }
 //    } catch {
