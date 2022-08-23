@@ -7,11 +7,9 @@ import constants.ApplicationConstants._
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import service.FileReader.fileReader
-import service.FileWriter.{encryptPassword, fileWriter}
+import service.FileWriter.fileWriter
 import transform.JoinDatasets.joinDataFrame
 import utils.ApplicationUtils.{configuration, createSparkSession}
-
-import java.nio.file.{Files, Paths}
 
 object DataPipeline {
   implicit val spark: SparkSession = createSparkSession()
@@ -21,12 +19,13 @@ object DataPipeline {
   val itemDataInputPath: String = appConf.getString(ITEM_DATA_INPUT_PATH)
   val clickStreamOutputPath: String = appConf.getString(CLICK_STREAM_OUTPUT_PATH)
   val itemDataOutputPath: String = appConf.getString(ITEM_OUTPUT_PATH)
+  val databaseURL: String = appConf.getString(DATABASE_URL)
 
   def initialSteps(filePath : String, fileFormat : String, timeStampCol: Option[String]): DataFrame = {
     val initialDF = fileReader(filePath, fileFormat)
     timeStampCol match {
       case Some(column) =>
-        //modifying column datatypes
+        //modifying columns datatype
         val timeStampDataTypeDF = stringToTimestamp(initialDF, column, INPUT_TIME_STAMP_FORMAT)
         val changeDataTypeDF=colDatatypeModifier(timeStampDataTypeDF,CLICK_STREAM_DATATYPE)
 
@@ -78,17 +77,12 @@ object DataPipeline {
     transformJoinedDF.show()
 
     //performing data quality checks on click stream dataset
-    val nullCheckFinalDF = nullCheck(transformJoinedDF, FINAL_TABLE_COL)
-    schemaValidationCheck(transformJoinedDF)
-    val duplicateCheckFinalDF = duplicatesCheck(nullCheckFinalDF, CLICK_STREAM_PRIMARY_KEYS, TIME_STAMP_COL)
-
-    //final df to be inserted - write into table
-    //demo table
-    if (!Files.exists(Paths.get(constants.ApplicationConstants.ENCRYPTED_DATABASE_PASSWORD))) {
-           encryptPassword(constants.ApplicationConstants.DATABASE_PASSWORD)
-    }
-    fileWriter("table_try_3", duplicateCheckFinalDF)
-    transformJoinedDF.printSchema()
+//    schemaValidationCheck(transformJoinedDF)
+//    val nullCheckFinalDF = nullCheck(transformJoinedDF)
+//    val duplicateCheckFinalDF = duplicatesCheck(nullCheckFinalDF, CLICK_STREAM_PRIMARY_KEYS, TIME_STAMP_COL)
+//
+//    //final df to be inserted - write into table
+//    fileWriter(databaseURL, "table_try_6", duplicateCheckFinalDF)
 
   }
 }

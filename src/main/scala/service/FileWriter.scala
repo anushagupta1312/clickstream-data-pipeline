@@ -1,11 +1,11 @@
 package service
 
-import exceptions.Exceptions.{DataframeIsEmptyException, FileWriterException}
+import constants.ApplicationConstants.ENCRYPTED_DATABASE_PASSWORD
+import exceptions.Exceptions.{DatabaseException, DataframeIsEmptyException, FileWriterException}
 import org.apache.spark.sql.DataFrame
-import java.io.{File, PrintWriter}
+
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-import scala.io.Source
 
 object FileWriter {
 
@@ -22,21 +22,10 @@ object FileWriter {
 //    }
 //  }
 
-  def encryptPassword(passwordPath:String):Unit={
-    //read from file and encrypt the actual password
-    val password = Source.fromFile(passwordPath).getLines.mkString
-    val actualPasswordInBytes = password.getBytes(StandardCharsets.UTF_8)
-    val encryptedPassword = Base64.getEncoder.encodeToString(actualPasswordInBytes)
-
-    //write encrypted password into file
-    val writer = new PrintWriter(new File("data/encrypted_password.txt" ))
-    writer.write(encryptedPassword)
-    writer.close()
-  }
-
   def decryptPassword(encryptedPasswordPath:String):String={
     //read from file and decrypt password
-    val decryptedPassword = Source.fromFile(encryptedPasswordPath).getLines.mkString
+    val source = scala.io.Source.fromFile(encryptedPasswordPath)
+    val decryptedPassword = try source.mkString finally source.close()
     val decoded = Base64.getDecoder.decode(decryptedPassword)
 
     //return the decrypted password as a string
@@ -44,20 +33,19 @@ object FileWriter {
     password
   }
 
-  def fileWriter(tablename: String, df: DataFrame): Unit = {
-    val DBURL = "jdbc:mysql://localhost:3306/target_project" //change in conf
-    val password = decryptPassword(constants.ApplicationConstants.ENCRYPTED_DATABASE_PASSWORD)
+  def fileWriter(databaseURL:String, tableName: String, df: DataFrame): Unit = {
+    val password = decryptPassword(ENCRYPTED_DATABASE_PASSWORD)
     try {
         df.write.format("jdbc")
-          .option("url", DBURL)
+          .option("url", databaseURL)
           .option("driver", "com.mysql.jdbc.Driver")
-          .option("dbtable", tablename)
+          .option("dbtable", tableName)
           .option("user", "root")
           .option("password",password)
           .mode("overwrite")
           .save()
     }catch{
-      case e: Exception => e.printStackTrace()
+      case e: Exception => throw DatabaseException("Database connection is not established")
     }
   }
 }

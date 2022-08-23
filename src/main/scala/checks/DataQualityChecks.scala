@@ -1,12 +1,12 @@
 package checks
 
-import exceptions.Exceptions.{DuplicateValuesExistException, NullValuesExistException, SchemaValidationFailedException}
+import exceptions.Exceptions.SchemaValidationFailedException
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{col, desc, row_number}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import service.DataPipeline.databaseURL
 import service.FileWriter
-import service.FileWriter.fileWriter
 import utils.ApplicationUtils.createSparkSession
 
 import scala.collection.JavaConversions._
@@ -16,7 +16,6 @@ object DataQualityChecks {
   implicit val spark: SparkSession = createSparkSession()
 
   var count = 0
-  var errorList: List[Row] = List[Row]()
   val errorSchema: StructType = StructType(Array(
     StructField("item_id", StringType, nullable = true),
     StructField("id", IntegerType,nullable = true),
@@ -35,20 +34,12 @@ object DataQualityChecks {
     StructField("event_d",DateType,nullable = true),
     StructField("record_load_ts",TimestampType,nullable = true)))
 
-  var errorDF = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], errorSchema)
   //nulls
-  def nullCheck(inputDF: DataFrame, columns: List[String]): DataFrame = {
-//    columns.foreach(c => {
-//      if(inputDF.filter(inputDF(c).isNull
-//        || inputDF(c) === ""
-//        || inputDF(c).contains("NULL")
-//        || inputDF(c).contains("null")).count() != 0){
-//        throw NullValuesExistException("Null values are present in the dataset")
-//      }
-//    })
+  def nullCheck(inputDF: DataFrame): DataFrame = {
+    var errorList: List[Row] = List[Row]()
     inputDF.collect().foreach(row => {
       row.toSeq.foreach(c => {
-        if (c == "UNKNOWN" || c == -1 || c == false || c == "null" || c == "NULL" || c == "") {
+        if (c == "UNKNOWN" || c == -1 || c == false || c == "null" || c == "NULL" || c == "" || c == null) {
           count = count + 1
         }
       })
@@ -57,7 +48,8 @@ object DataQualityChecks {
       }
       count = 0
     })
-    errorDF = errorDF.union(spark.createDataFrame(errorList, errorSchema))
+    val errorDF = spark.createDataFrame(errorList, errorSchema)
+    FileWriter.fileWriter(databaseURL,"error_table_nullCheck", errorDF)
     val nullCheckFinalDF = inputDF.except(errorDF)
     nullCheckFinalDF
   }
@@ -67,9 +59,8 @@ object DataQualityChecks {
     val exceptionsDF = inputDF.withColumn("rn", row_number().over(Window.partitionBy(primaryKeyCols.map(col): _*).orderBy(desc(orderByCol))))
       .filter(col("rn") >1).drop("rn")
 
-    errorDF = errorDF.union(exceptionsDF)
-    val duplicateCheckFinalDF = inputDF.except(errorDF)
-    FileWriter.fileWriter("error_table", errorDF)
+    val duplicateCheckFinalDF = inputDF.except(exceptionsDF)
+    FileWriter.fileWriter(databaseURL,"error_table_duplicateCheck", exceptionsDF)
     duplicateCheckFinalDF
   }
 
@@ -83,7 +74,4 @@ object DataQualityChecks {
       })
     })
   }
-
-  //categorical
-
 }
