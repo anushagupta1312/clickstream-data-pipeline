@@ -12,5 +12,6 @@ object Exceptions{
   case class NullValuesExistException(message : String) extends Exception(message)
   case class DuplicateValuesExistException(message:String) extends Exception(message)
   case class DatabaseException(message:String) extends Exception(message)
+
 }
 
