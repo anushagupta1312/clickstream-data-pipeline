@@ -7,15 +7,11 @@ object Exceptions{
   case class ColumnNotFoundException(message:String) extends Exception(message)
   case class EmptyFilePathException(message:String) extends Exception(message)
   case class FilePathNotFoundException(message:String) extends Exception(message)
-<<<<<<< HEAD
   case class InvalidInputFormatException(message:String) extends Exception(message)
   case class SchemaValidationFailedException(message : String) extends Exception(message)
   case class NullValuesExistException(message : String) extends Exception(message)
   case class DuplicateValuesExistException(message:String) extends Exception(message)
   case class DatabaseException(message:String) extends Exception(message)
-=======
-  case class SchemaValidationFailedException(message : String) extends Exception(message)
-  case class NullValuesExistException(message : String) extends Exception(message)
->>>>>>> d5b0975 (data quality checks for null and schema)
+
 }
 

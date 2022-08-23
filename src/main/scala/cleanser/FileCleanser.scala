@@ -1,9 +1,7 @@
 package cleanser
 
-<<<<<<< HEAD
-=======
 import utils.ApplicationUtils.check
->>>>>>> d5b0975 (data quality checks for null and schema)
+
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
