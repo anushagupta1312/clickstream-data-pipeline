@@ -24,6 +24,6 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.29",
   //for doing testing
   "org.scalatest" %% "scalatest" % "3.1.0" % Test,
-  "mysql" % "mysql-connector-java" % "8.0.30",
+  "mysql" % "mysql-connector-java" % "8.0.30"
 )
 

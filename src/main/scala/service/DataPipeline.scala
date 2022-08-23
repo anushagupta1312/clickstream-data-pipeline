@@ -1,6 +1,6 @@
 package service
 
-import checks.DataQualityChecks.{duplicatesCheck, nullCheck, schemaValidationCheck}
+import checks.DataQualityChecks.{nullCheck, schemaValidationCheck}
 import cleanser.FileCleanser._
 import com.typesafe.config.Config
 import constants.ApplicationConstants._
@@ -77,12 +77,12 @@ object DataPipeline {
     transformJoinedDF.show()
 
     //performing data quality checks on click stream dataset
+
+    nullCheck(transformJoinedDF, FINAL_TABLE_COL)
     schemaValidationCheck(transformJoinedDF)
-    val nullCheckFinalDF = nullCheck(transformJoinedDF)
-    val duplicateCheckFinalDF = duplicatesCheck(nullCheckFinalDF, CLICK_STREAM_PRIMARY_KEYS, TIME_STAMP_COL)
+    //duplicatesCheck(transformJoinedDF, primaryKeys)
 
     //final df to be inserted - write into table
-    fileWriter(databaseURL, "table_try_6", duplicateCheckFinalDF)
-
+    fileWriter(databaseURL, "table_try_6", transformJoinedDF)
   }
 }
