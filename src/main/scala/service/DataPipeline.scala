@@ -1,88 +1,86 @@
 package service
 
-import checks.DataQualityChecks.{duplicatesCheck, nullCheck, schemaValidationCheck}
+import checks.DataQualityChecks._
 import cleanser.FileCleanser._
 import com.typesafe.config.Config
 import constants.ApplicationConstants._
-import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import service.FileReader.fileReader
 import service.FileWriter.fileWriter
-import transform.JoinDatasets.joinDataFrame
-import utils.ApplicationUtils.{configuration, createSparkSession}
+import transform.JoinDatasets._
 
 object DataPipeline {
-  implicit val spark: SparkSession = createSparkSession()
-  val appConf: Config = configuration()
-  val log: Logger = Logger.getLogger(getClass)
-  val clickStreamInputPath: String = appConf.getString(CLICK_STREAM_INPUT_PATH)
-  val itemDataInputPath: String = appConf.getString(ITEM_DATA_INPUT_PATH)
-  val clickStreamOutputPath: String = appConf.getString(CLICK_STREAM_OUTPUT_PATH)
-  val itemDataOutputPath: String = appConf.getString(ITEM_OUTPUT_PATH)
-  val databaseURL: String = appConf.getString(DATABASE_URL)
-
-  def initialSteps(filePath : String, fileFormat : String, timeStampCol: Option[String]): DataFrame = {
+  //performs initial steps for click stream dataset
+  def clickStreamInitialSteps(filePath: String, fileFormat: String, database_URL : String)(implicit sparkSession: SparkSession): DataFrame = {
+    //reads the file into a dataframe
     val initialDF = fileReader(filePath, fileFormat)
-    timeStampCol match {
-      case Some(column) =>
-        //modifying columns datatype
-        val timeStampDataTypeDF = stringToTimestamp(initialDF, column, INPUT_TIME_STAMP_FORMAT)
-        val changeDataTypeDF=colDatatypeModifier(timeStampDataTypeDF,CLICK_STREAM_DATATYPE)
 
-        //eliminate rows on NOT_NULL_COLUMNS
-        val rowEliminatedDF = removeRows(changeDataTypeDF,CLICK_STREAM_NOT_NULL_KEYS)
+    //modifying column dataTypes
+    val changeDataTypeDF = stringToTimestamp(initialDF, TIME_STAMP_COL, INPUT_TIME_STAMP_FORMAT)
 
-        // fill time stamp
-        val timeFilledDF=fillCurrentTime(rowEliminatedDF)
+    //eliminate rows on NOT_NULL_COLUMNS
+    val rowEliminatedDF = removeRows(changeDataTypeDF, CLICK_STREAM_PRIMARY_KEYS, database_URL, NULL_TABLE_CLICK_STREAM)
 
-        // fill null values
-        val nullFilledDF=fillValues(timeFilledDF,COLUMN_NAME_DEFAULT_VALUE_CLICK_STREAM_MAP)
+    // fill null values
+    val nullFilledDF = fillValues(rowEliminatedDF, COLUMN_NAME_DEFAULT_VALUE_CLICK_STREAM_MAP)
 
-        //converting redirection column into lowercase
-        val modifiedDF = toLowercase(nullFilledDF, REDIRECTION_COL)
+    //converting redirection column into lowercase
+    val modifiedDF = toLowercase(nullFilledDF, REDIRECTION_COL)
 
-        //remove duplicates from the dataset
-        val DFWithoutDuplicates = removeDuplicates(modifiedDF, CLICK_STREAM_PRIMARY_KEYS, Some(TIME_STAMP_COL))
+    //remove duplicates from the dataset
+    val DFDeDuplicates = removeDuplicates(database_URL, modifiedDF, CLICK_STREAM_PRIMARY_KEYS, Some(TIME_STAMP_COL))
 
-        DFWithoutDuplicates
-
-      case None =>
-        val changeDataTypeDF=colDatatypeModifier(initialDF,ITEM_DATATYPE)
-
-        //eliminate rows on NOT_NULL_COLUMNS
-        val rowEliminatedDF = removeRows(changeDataTypeDF,ITEM_NOT_NULL_KEYS)
-
-        //fill null values
-        val nullFilledDF=fillValues(rowEliminatedDF,COLUMN_NAME_DEFAULT_VALUE_ITEM_DATA_MAP)
-
-        //remove duplicates from the dataset
-        val DFWithoutDuplicates = removeDuplicates(nullFilledDF, ITEM_PRIMARY_KEYS, None)
-
-        DFWithoutDuplicates
-    }
+    DFDeDuplicates
   }
 
-  def execute(): Unit = {
-    val clickStreamDFDeDuplicates = initialSteps(clickStreamInputPath, FILE_FORMAT, Some(TIME_STAMP_COL))
+  //performs initial steps for item dataset
+  def itemInitialSteps( filePath: String, fileFormat: String, database_URL : String)(implicit sparkSession: SparkSession): DataFrame = {
+    //reads the file into a dataframe
+    val initialDF = fileReader(filePath, fileFormat)
 
-    val itemDFDeDuplicates = initialSteps(itemDataInputPath, FILE_FORMAT, None)
+    //eliminate rows on NOT_NULL_COLUMNS
+    val rowEliminatedDF = removeRows(initialDF, ITEM_PRIMARY_KEYS, database_URL, NULL_TABLE_ITEM)
+
+    //fill null values
+    val nullFilledDF = fillValues(rowEliminatedDF, COLUMN_NAME_DEFAULT_VALUE_ITEM_DATA_MAP)
+
+    //remove duplicates from the dataset
+    val DFDeDuplicates = removeDuplicates(database_URL, nullFilledDF, ITEM_PRIMARY_KEYS, None)
+
+    DFDeDuplicates
+  }
+
+  //executes the pipeline by joining the two datasets and loading it into mysql database
+  def execute(appConf: Config)(implicit sparkSession: SparkSession): Unit = {
+
+    //inputting data from conf file
+    val clickStreamInputPath: String = appConf.getString(CLICK_STREAM_INPUT_PATH)
+    val itemDataInputPath: String = appConf.getString(ITEM_DATA_INPUT_PATH)
+    val database_URL = appConf.getString(DATABASE_URL)
+    val schemaPath = appConf.getString(SCHEMA_PATH)
+
+    //clickStreamInitialSteps returns a dataframe without duplicates
+    val clickStreamDFDeDuplicates = clickStreamInitialSteps(clickStreamInputPath, FILE_FORMAT, database_URL)
+
+    //itemInitialSteps returns a dataframe without duplicates
+    val itemDFDeDuplicates = itemInitialSteps(itemDataInputPath, FILE_FORMAT, database_URL)
 
     //  joining two datasets
-    val joinedDataframe = joinDataFrame(clickStreamDFDeDuplicates, itemDFDeDuplicates, join_key, join_type)
+    val joinedDataframe = joinDataFrame(clickStreamDFDeDuplicates, itemDFDeDuplicates, JOIN_KEY, JOIN_TYPE)
 
-    val nullHandledJoinTable = fillValues(joinedDataframe,COLUMN_NAME_DEFAULT_VALUE_ITEM_DATA_MAP)
+    //handling null values for joined dataframe
+    val nullHandledJoinTable = fillValues(joinedDataframe, COLUMN_NAME_DEFAULT_VALUE_ITEM_DATA_MAP)
 
-    // transform
-    val transformJoinedDF = transform.JoinDatasets.transformDataFrame(nullHandledJoinTable)
-    transformJoinedDF.show()
+    // transform operation is performed
+    val enrichedJoinedDF = enrichDataFrame(nullHandledJoinTable)
 
-    //performing data quality checks on click stream dataset
-//    schemaValidationCheck(transformJoinedDF)
-//    val nullCheckFinalDF = nullCheck(transformJoinedDF)
-//    val duplicateCheckFinalDF = duplicatesCheck(nullCheckFinalDF, CLICK_STREAM_PRIMARY_KEYS, TIME_STAMP_COL)
-//
-//    //final df to be inserted - write into table
-//    fileWriter(databaseURL, "table_try_6", duplicateCheckFinalDF)
+    //performing data quality checks on the final dataframe before loading it into mysql database
+    val correctSchemaDF = schemaValidationCheck(enrichedJoinedDF, schemaPath)
+    nullCheck(correctSchemaDF, FINAL_TABLE_COL)
+    duplicatesCheck(correctSchemaDF, FINAL_PRIMARY_KEY, TIME_STAMP_COL)
+
+    //final df to be inserted - write into table
+    fileWriter(database_URL, TABLE_NAME, correctSchemaDF)
 
   }
 }

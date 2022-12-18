@@ -1,40 +1,51 @@
 package utils
 
 import com.typesafe.config.{Config, ConfigFactory}
+import constants.ApplicationConstants.{APP_MASTER, APP_NAME}
 import exceptions.Exceptions.{ColumnNotFoundException, DataframeIsEmptyException}
+import org.apache.spark.sql.types.{DataType, StructType}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import java.io.File
+import scala.io.Source
 
 object ApplicationUtils {
 
   //configuration
-  def configuration():Config = {
-    val parsedConfig = ConfigFactory.parseFile(new File("conf/local.conf"))
+  def configuration(inputPath: String): Config = {
+    val parsedConfig = ConfigFactory.parseFile(new File(inputPath))
     val appConf: Config = ConfigFactory.load(parsedConfig)
-    //    val appName = appConf.getString("spark.app.name")
-    //    val appMaster = appConf.getString("spark.app.master")
     appConf
   }
 
   //Creating the spark session
-  def createSparkSession(): SparkSession = {
+  def createSparkSession(inputAppConf: Config): SparkSession = {
     implicit val spark: SparkSession = SparkSession.getActiveSession.getOrElse(
       SparkSession.builder
-        .appName(configuration().getString("spark.app.name"))
-        .master(configuration().getString("spark.app.master"))
-        .enableHiveSupport()
+        .appName(inputAppConf.getString(APP_NAME))
+        .master(inputAppConf.getString(APP_MASTER))
         .getOrCreate()
     )
     spark
   }
 
   //checking for exceptions
-  def check(inputDF : DataFrame, colName :String): Unit = {
-    if(inputDF.count() == 0) {
+  def check(inputDF: DataFrame, colName: Seq[String]): Unit = {
+    if (inputDF.count() == 0) {
       throw DataframeIsEmptyException("The dataframe is empty")
-    } else if (!inputDF.columns.contains(colName))
-      throw ColumnNotFoundException("The specified column does not exist")
+    } else {
+      colName.foreach { (element: String) =>
+        if (!inputDF.columns.contains(element))
+          throw ColumnNotFoundException("The specified column does not exist")
+      }
+    }
   }
 
+  //to extract the schema from the json file
+  def schemaRead(schemaPath : String) : StructType = {
+    val source = Source.fromFile(schemaPath)
+    val schemaJson = try source.getLines().mkString finally source.close()
+    val correctSchema = DataType.fromJson(schemaJson).asInstanceOf[StructType]
+    correctSchema
+  }
 }
